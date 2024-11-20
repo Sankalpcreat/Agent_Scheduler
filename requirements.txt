@@ -1,0 +1,11 @@
+langchain>=0.0.8
+chromadb>=0.3.22
+memgpt
+langgraph
+langmem
+openai
+pytest
+loguru
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
