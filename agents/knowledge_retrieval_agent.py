@@ -1,6 +1,6 @@
 from chromadb import Client
 from chromadb.config import Settings
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from loguru import logger
 import os
@@ -19,7 +19,7 @@ class KnowledgeRetrievalAgent:
             openai_api_key = os.getenv('OPENAI_API_KEY')
             if not openai_api_key:
                 raise ValueError("OPENAI_API_KEY environment variable is not set.")
-            self.llm = OpenAI(api_key=openai_api_key)
+            self.llm = ChatOpenAI(api_key=openai_api_key) 
 
            
             self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500)
@@ -69,7 +69,7 @@ class KnowledgeRetrievalAgent:
             content_chunks = results.get('documents', [])
             content = ' '.join(content_chunks)
             
-            summary = self.llm.generate_summary(content)
+            summary = self.llm.predict(f"Summarize the following: {content}")
             logger.info(f"Summary generated for document '{doc_title}'.")
             return summary
         except Exception as e:
