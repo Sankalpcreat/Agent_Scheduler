@@ -16,3 +16,4 @@ This project implements a multi-agent system that includes:
 - Python 3.8 or higher
 - Google Cloud account with access to Google Calendar and Tasks APIs
 - OpenAI API key
+Added test cases
