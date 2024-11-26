@@ -3,7 +3,7 @@ import datetime
 from dotenv import load_dotenv
 from loguru import logger
 from chromadb import Client
-from langchain.llms import OpenAI
+from langchain_community.llms import OpenAI
 from langmem import LangMem
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError

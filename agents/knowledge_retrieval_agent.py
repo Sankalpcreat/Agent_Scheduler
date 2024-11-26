@@ -1,6 +1,5 @@
-from chromadb import Client
-from chromadb.config import Settings
-from langchain.chat_models import ChatOpenAI 
+from chromadb import PersistentClient
+from langchain_community.chat_models import ChatOpenAI 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from loguru import logger
 import os
@@ -10,10 +9,7 @@ class KnowledgeRetrievalAgent:
     def __init__(self):
         try:
            
-            self.chroma_client = Client(Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory="data/documents"
-            ))
+            self.chroma_client = PersistentClient(path="data/documents")
             
            
             openai_api_key = os.getenv('OPENAI_API_KEY')
