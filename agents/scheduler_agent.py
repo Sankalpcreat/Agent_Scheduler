@@ -3,7 +3,7 @@ import datetime
 from dotenv import load_dotenv
 from loguru import logger
 from chromadb import Client
-from langchain_community.llms import OpenAI
+from langchain_openai import ChatOpenAI
 from langmem import LangMem
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -20,7 +20,9 @@ class SchedulerAgent:
             openai_api_key = os.getenv('OPENAI_API_KEY')
             if not openai_api_key:
                 raise ValueError("OPENAI_API_KEY environment variable is not set.")
-            self.llm = llm or OpenAI(api_key=openai_api_key)
+
+            
+            self.llm = ChatOpenAI(model_name='gpt-4', temperature=0.7)
 
             if calendar_service:
                 self.calendar_service = calendar_service
