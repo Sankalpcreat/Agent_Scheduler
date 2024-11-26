@@ -10,10 +10,7 @@ from googleapiclient.errors import HttpError
 from agents.google_auth import authenticate_google_api
 
 class SchedulerAgent:
-    """
-    Agent responsible for optimizing meeting schedules and handling notifications.
-    """
-
+    
     def __init__(self, chroma_client=None, langmem=None, llm=None, calendar_service=None):
         try:
             
