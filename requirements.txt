@@ -9,5 +9,5 @@ loguru
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-letta
+letta==0.5.5
 matplotlib
