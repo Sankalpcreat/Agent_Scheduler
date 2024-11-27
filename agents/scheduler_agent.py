@@ -4,32 +4,30 @@ from dotenv import load_dotenv
 from loguru import logger
 from chromadb import Client
 from langchain_openai import ChatOpenAI
-from langmem import LangMem
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.schema import SystemMessage, HumanMessage
+from langmem import Client as LangMemClient
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from agents.google_auth import authenticate_google_api
 
 class SchedulerAgent:
     
-    def __init__(self, chroma_client=None, langmem=None, llm=None, calendar_service=None):
+   
+    def __init__(self, chroma_client=None, langmem_client=None, llm=None, calendar_service=None):
         try:
-            
             load_dotenv()
             self.chroma_client = chroma_client or Client(path='data/schedules/')
-            self.langmem = langmem or LangMem()
+            self.langmem_client = langmem_client or LangMemClient()
             openai_api_key = os.getenv('OPENAI_API_KEY')
             if not openai_api_key:
                 raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
-            
             self.llm = ChatOpenAI(model_name='gpt-4', temperature=0.7)
-
             if calendar_service:
                 self.calendar_service = calendar_service
             else:
                 self.creds = authenticate_google_api()
                 self.calendar_service = build('calendar', 'v3', credentials=self.creds)
-
             logger.info("SchedulerAgent initialized successfully with Google Calendar API.")
         except Exception as e:
             logger.exception("Failed to initialize SchedulerAgent.")
@@ -84,14 +82,17 @@ class SchedulerAgent:
             raise e
 
     def generate_agenda(self, meeting_details):
-        
         try:
             agenda_prompt = f"Create a detailed agenda for a meeting about {meeting_details['title']}."
-            agenda = self.llm.generate_text(agenda_prompt)
-            logger.info(f"Agenda generated for meeting '{meeting_details['title']}'.")
+            messages = [
+            SystemMessage(content="You are an assistant that helps create agendas."),
+            HumanMessage(content=agenda_prompt)
+        ]
+            response = self.llm.invoke(messages)
+            agenda = response.content  # Extract the agenda from the response
             return agenda
         except Exception as e:
-            logger.exception("Error in generate_agenda.")
+            logger.error("Error in generate_agenda.", exc_info=True)
             raise e
 
     def send_notifications(self, meeting_details, agenda):

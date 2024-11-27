@@ -1,24 +1,26 @@
 import unittest
-from unittest.mock import MagicMock,patch
-from datetime import datetime,timedelta
+from unittest.mock import MagicMock, patch
+from datetime import datetime, timedelta
 from agents.scheduler_agent import SchedulerAgent
+from langchain.schema import SystemMessage, HumanMessage, AIMessage
 
 class TestSchedulerAgent(unittest.TestCase):
 
     def setUp(self):
+       
+        self.mock_chroma_client = MagicMock()
+        self.mock_langmem_client = MagicMock()  
+        self.mock_llm = MagicMock()
+        self.mock_calendar_service = MagicMock()
 
-        self.mock_chroma_client=MagicMock()
-        self.mock_langmem = MagicMock()
-        self.mock.llm=MagicMock()
-        self.mock_calendar_service=MagicMock()
-
+        
         self.agent = SchedulerAgent(
             chroma_client=self.mock_chroma_client,
-            langmem=self.mock_langmem,
+            langmem_client=self.mock_langmem_client, 
             llm=self.mock_llm,
             calendar_service=self.mock_calendar_service
         )
-    
+
     def test_retrieve_schedule_data(self):
         
         mock_schedules = [
@@ -31,7 +33,6 @@ class TestSchedulerAgent(unittest.TestCase):
         self.assertEqual(len(schedules), 2, "Schedule data retrieval failed.")
         self.mock_chroma_client.get_all.assert_called_once()
 
-    
     def test_identify_optimal_slots(self):
         
         meeting_details = {'duration': 60}
@@ -52,20 +53,35 @@ class TestSchedulerAgent(unittest.TestCase):
         meeting_details = {'duration': 60}
         available_slot = self.agent._find_available_slot(meeting_details)
 
-        expected_slot = '2024-12-01T11:15:00Z'  # 15 minutes after the last meeting
+        expected_slot = '2024-12-01T11:15:00Z'  # 15 minutes after the first meeting
         self.assertEqual(available_slot, expected_slot, "Available slot calculation failed.")
-    
-    def test_generate_agenda(self):
-        
-        meeting_details = {'title': 'Project Discussion'}
-        self.mock_llm.generate_text.return_value = "Agenda for Project Discussion:\n1. Updates\n2. Next Steps"
 
+    def test_generate_agenda(self):
+  
+        from langchain.schema import AIMessage, SystemMessage, HumanMessage
+
+        meeting_details = {'title': 'Project Discussion'}
+        mock_response = AIMessage(content="Meeting Agenda: Project Discussion\n\nI. Call to Order\n- Brief introduction\n\nII. Progress Updates\n...")
+
+ 
+        self.mock_llm.invoke.return_value = mock_response
+
+ 
         agenda = self.agent.generate_agenda(meeting_details)
-        self.assertIn("Agenda for Project Discussion", agenda, "Agenda generation failed.")
-        self.mock_llm.generate_text.assert_called_once()
+
+   
+        self.assertIn("Meeting Agenda: Project Discussion", agenda, "Agenda generation failed.")
+        self.assertIn("I. Call to Order", agenda, "Agenda does not contain expected sections.")
+        self.assertIn("II. Progress Updates", agenda, "Agenda is missing a progress updates section.")
+
+    
+        self.mock_llm.invoke.assert_called_once_with([
+        SystemMessage(content="You are an assistant that helps create agendas."),
+        HumanMessage(content="Create a detailed agenda for a meeting about Project Discussion.")
+    ])
 
     def test_send_notifications(self):
-        
+      
         meeting_details = {
             'title': 'Project Discussion',
             'start_time': '2024-12-01T15:00:00Z'
@@ -77,10 +93,9 @@ class TestSchedulerAgent(unittest.TestCase):
             mock_logger.info.assert_called_with(
                 f"Notification sent: Meeting 'Project Discussion' scheduled on 2024-12-01T15:00:00Z.\nAgenda:\n{agenda}"
             )
-    
 
     def test_adjust_schedule(self):
-       
+      
         mock_events = [
             {'title': 'Meeting 1', 'start_time': '2024-12-01T10:00:00Z', 'end_time': '2024-12-01T11:00:00Z'},
             {'title': 'Meeting 2', 'start_time': '2024-12-01T10:30:00Z', 'end_time': '2024-12-01T11:30:00Z'}
@@ -89,11 +104,11 @@ class TestSchedulerAgent(unittest.TestCase):
 
         self.agent.adjust_schedule()
 
-       
+        
         self.mock_chroma_client.update.assert_called()
 
     def test_add_event_to_google_calendar(self):
-        
+      
         event_details = {
             'title': 'Team Sync',
             'start_time': '2024-12-01T15:00:00Z',
@@ -115,7 +130,6 @@ class TestSchedulerAgent(unittest.TestCase):
                 'reminders': {'useDefault': True}
             }
         )
-
 
 if __name__ == '__main__':
     unittest.main()
